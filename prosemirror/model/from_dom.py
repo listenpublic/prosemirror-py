@@ -792,8 +792,9 @@ class ParseContext:
     ) -> None:
         index = start_index if start_index is not None else 0
 
-        dom_: lxml.html.HtmlElement | None = list(parent)[index]
-        end = None if end_index is None else list(parent)[end_index]
+        children = list(parent)
+        dom_: lxml.html.HtmlElement | None = children[index] if index < len(children) else None
+        end = None if end_index is None else children[end_index]
 
         while dom_ is not None and dom_ != end:
             self.find_at_point(parent, index)
