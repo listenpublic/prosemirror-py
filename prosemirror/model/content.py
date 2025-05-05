@@ -1,4 +1,5 @@
 import re
+from dataclasses import dataclass
 from functools import cmp_to_key, reduce
 from typing import (
     TYPE_CHECKING,
@@ -18,22 +19,16 @@ if TYPE_CHECKING:
     from .schema import NodeType
 
 
+@dataclass
 class MatchEdge:
     type: "NodeType"
     next: "ContentMatch"
 
-    def __init__(self, type: "NodeType", next: "ContentMatch") -> None:
-        self.type = type
-        self.next = next
 
-
+@dataclass
 class WrapCacheEntry:
     target: "NodeType"
     computed: list["NodeType"] | None
-
-    def __init__(self, target: "NodeType", computed: list["NodeType"] | None) -> None:
-        self.target = target
-        self.computed = computed
 
 
 class Active(TypedDict):
@@ -86,7 +81,7 @@ class ContentMatch:
     ) -> Optional["ContentMatch"]:
         if end is None:
             end = frag.child_count
-        cur: "ContentMatch" | None = self
+        cur: ContentMatch | None = self
         i = start
         while cur and i < end:
             cur = cur.match_type(frag.child(i).type)
@@ -118,7 +113,7 @@ class ContentMatch:
         to_end: bool = False,
         start_index: int = 0,
     ) -> Fragment | None:
-        seen = [self]
+        seen: list[ContentMatch] = [self]
 
         def search(match: ContentMatch, types: list["NodeType"]) -> Fragment | None:
             nonlocal seen
@@ -289,7 +284,7 @@ Expr = ChoiceExpr | SeqExpr | PlusExpr | StarExpr | OptExpr | RangeExpr | NameEx
 
 
 def parse_expr(stream: TokenStream) -> Expr:
-    exprs = []
+    exprs: list[Expr] = []
     while True:
         exprs.append(parse_expr_seq(stream))
         if not stream.eat("|"):
@@ -300,7 +295,7 @@ def parse_expr(stream: TokenStream) -> Expr:
 
 
 def parse_expr_seq(stream: TokenStream) -> Expr:
-    exprs = []
+    exprs: list[Expr] = []
     while True:
         exprs.append(parse_expr_subscript(stream))
         next_ = stream.next()
@@ -312,7 +307,7 @@ def parse_expr_seq(stream: TokenStream) -> Expr:
 
 
 def parse_expr_subscript(stream: TokenStream) -> Expr:
-    expr = parse_expr_atom(stream)
+    expr: Expr = parse_expr_atom(stream)
     while True:
         if stream.eat("+"):
             expr = {"type": "plus", "expr": expr}
@@ -556,7 +551,7 @@ def check_for_dead_ends(match: ContentMatch, stream: TokenStream) -> None:
                 work.append(next)
         if dead:
             stream.err(
-                f'Only non-generatable nodes ({", ".join(nodes)}) in a required '
+                f"Only non-generatable nodes ({', '.join(nodes)}) in a required "
                 "position (see https://prosemirror.net/docs/guide/#generatable)",
             )
         i += 1
